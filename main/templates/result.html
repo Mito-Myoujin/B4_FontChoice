@@ -1,0 +1,78 @@
+<!doctype html>
+
+<head>
+    <style>
+    .Harenosora{
+          font-family: "HarenosoraMincho";}
+    .MkPOP{
+          font-family: "851MkPOP";}
+    .NotoSerifJP-Medium{
+          font-family: "NotoSerifJP-Medium"}
+    .LightNovelPOP{
+          font-family: "07LightNovelPOP"}
+    .onryou{
+          font-family: "onryou"}
+    .Tanuki{
+          font-family: "Tanuki-Permanent-Marker"}
+    </style>
+</head>
+
+
+<body>
+
+
+  <p style="text-align:center">
+
+<font size="-2">
+  Font No. ：{{FontNo}}
+</font>
+
+  <div id="content">
+  </div>
+
+  </p>
+
+
+<script>
+    //const fs = require('fs');
+    // ブラウザだと Node.js が動作しないから　require　もない
+
+    let FontName = "LightNovelPOP"
+    // server.py から変数 FontNo を受け取る
+    const name = {{FontNo}}
+    // txst に避難させた認識した文章を取り出す
+    autotext = sessionStorage.getItem('txst');
+
+/*
+    if(name==0){
+        FontName = "Harenosora"
+    }else if(name==1){
+        FontName = "LightNovelPOP"
+    }else if(name==2){
+        FontName = "Tanuki"
+    }
+*/
+    // 番号でフォントを指定
+    if(name==0){
+        FontName = "Harenosora"
+    }else if(name==1){
+        FontName = "MkPOP"
+    }else if(name==2){
+        FontName = "NotoSerifJP-Medium"
+    }else if(name==3){
+        FontName = "LightNovelPOP"
+    }else if(name==4){
+        FontName = "onryou"
+    }else if(name==5){
+        FontName = "Tanuki"
+    }
+
+    // 文字出力
+    content.innerHTML += '<div style="text-align:center" class='+FontName+'>'+ autotext +'</div>';
+
+    // 後片付け
+    sessionStorage.removeItem('txst')
+    //fs.unlinkSync("/Users/chikuwa/Downloads/test.wav");
+
+</script>
+</body>

@@ -1,0 +1,158 @@
+<!doctype html>
+
+<head>
+    <style>
+    .Harenosora{
+          font-family: "HarenosoraMincho";}
+    .MkPOP{
+          font-family: "851MkPOP";}
+    .NotoSerifJP-Medium{
+          font-family: "NotoSerifJP-Medium"}
+    .LightNovelPOP{
+          font-family: "07LightNovelPOP"}
+    .onryou{
+          font-family: "onryou"}
+    .Tanuki{
+          font-family: "Tanuki-Permanent-Marker"}
+    </style>
+</head>
+
+
+<body>
+  <form style="text-align:center;" action="/result" method="post">
+      <a id="download">Download</a>
+      <input type="submit" value="conversion">
+  </form>
+  <div id="content" style="text-align:center;">
+  </div>
+
+  <script>
+    // 日本語に対応した"Web Speech API"の準備
+    const speech = new webkitSpeechRecognition();
+    speech.lang = 'ja-JP';
+    // 変数
+    const btn = document.getElementById('btn');
+    const content =  document.getElementById('content');
+    let FontName = "LightNovelPOP"
+    const downloadLink = document.getElementById('download');
+    // for audio
+    let audio_sample_rate = null;
+    let scriptProcessor = null;
+    let audioContext = null;
+    // audio data
+    let audioData = [];
+    let bufferSize = 1024;
+
+    ////////// fanction //////////
+    // 【オーディオセーブ関数】
+    let saveAudio = function () {
+        downloadLink.href = exportWAV(audioData); // 関数exportWAV呼び出し
+        downloadLink.download = 'test.wav';
+        downloadLink.click();
+    }
+
+    // 【floatデータをwavにエクスポート】
+    let exportWAV = function (audioData) {
+      // wavエンコーディング
+      let encodeWAV = function (samples, sampleRate) {
+          let buffer = new ArrayBuffer(44 + samples.length * 2);
+          let view = new DataView(buffer);
+          let writeString = function (view, offset, string) {
+              for (let i = 0; i < string.length; i++) {
+                  view.setUint8(offset + i, string.charCodeAt(i));
+              }
+          };
+          let floatTo16BitPCM = function (output, offset, input) {
+              for (let i = 0; i < input.length; i++ , offset += 2) {
+                  let s = Math.max(-1, Math.min(1, input[i]));
+                  output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+              }
+          };
+          writeString(view, 0, 'RIFF');  // RIFFヘッダ
+          view.setUint32(4, 32 + samples.length * 2, true); // これ以降のファイルサイズ
+          writeString(view, 8, 'WAVE'); // WAVEヘッダ
+          writeString(view, 12, 'fmt '); // fmtチャンク
+          view.setUint32(16, 16, true); // fmtチャンクのバイト数
+          view.setUint16(20, 1, true); // フォーマットID
+          view.setUint16(22, 1, true); // チャンネル数
+          view.setUint32(24, sampleRate, true); // サンプリングレート
+          view.setUint32(28, sampleRate * 2, true); // データ速度
+          view.setUint16(32, 2, true); // ブロックサイズ
+          view.setUint16(34, 16, true); // サンプルあたりのビット数
+          writeString(view, 36, 'data'); // dataチャンク
+          view.setUint32(40, samples.length * 2, true); // 波形データのバイト数
+          floatTo16BitPCM(view, 44, samples); // 波形データ
+          return view;
+      };
+      // ここで何してるんだろう
+      let mergeBuffers = function (audioData) {
+        let sampleLength = 0;
+        for (let i = 0; i < audioData.length; i++) {
+          sampleLength += audioData[i].length;
+        }
+        let samples = new Float32Array(sampleLength);
+        let sampleIdx = 0;
+        for (let i = 0; i < audioData.length; i++) {
+          for (let j = 0; j < audioData[i].length; j++) {
+            samples[sampleIdx] = audioData[i][j];
+            sampleIdx++;
+          }
+        }
+        return samples;
+      };
+      let dataview = encodeWAV(mergeBuffers(audioData), audio_sample_rate);
+      let audioBlob = new Blob([dataview], { type: 'audio/wav' });
+      console.log(dataview);
+      let myURL = window.URL || window.webkitURL;
+      let url = myURL.createObjectURL(audioBlob);
+      return url;
+    };
+
+    // 【関数:onAudioProcess】
+    var onAudioProcess = function (e) {
+        var input = e.inputBuffer.getChannelData(0);
+        var bufferData = new Float32Array(bufferSize);
+        for (var i = 0; i < bufferSize; i++) {
+            bufferData[i] = input[i];
+        }
+        audioData.push(bufferData);
+    };
+
+    // 【getusermedia】
+    let handleSuccess = function (stream) {   // ストリームデータを扱う
+        audioContext = new AudioContext();    // audioContext作成
+        audio_sample_rate = audioContext.sampleRate;
+        console.log(audio_sample_rate);
+        scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);   // バッファサイズ, 入力ch数, 出力ch数　を指定
+        var mediastreamsource = audioContext.createMediaStreamSource(stream);     // 入力をWeb Audio APIの入力ノードとして扱う
+        mediastreamsource.connect(scriptProcessor);
+        scriptProcessor.onaudioprocess = onAudioProcess;    // 関数onAudioProcess呼び出し
+        scriptProcessor.connect(audioContext.destination);
+        };
+
+    ////////// main //////////
+    // 音声認識開始条件
+    speech.start();
+    // 【getUserMedia】
+    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      .then(handleSuccess);
+          // .getUserMedia：第1引数にはデバイスを指定する連想配列, 第2引数にアクセス成功時用コールバック関数, 第3引数に失敗時用コールバック関数を指
+          // 今回はaudio機能のみtrue。
+
+    ////////// 結果 //////////
+    speech.onresult = function(e) {    // onresult：正しく音声が認識できた(resultイベント発生)時のイベントハンドラ
+        saveAudio();                   // 上で定義されている saveAudio 関数を実行
+        speech.stop();                 // 音声認識ストップ
+        if(e.results[0].isFinal){
+            autotext =  e.results[0][0].transcript  // var：変数初期化
+            console.log(autotext);
+            //autotext = autotext.toString();
+            //autotext のデータを変数 txst に格納して保持
+            sessionStorage.setItem('txst', autotext);
+            //content.innerHTML += '<div class='+FontName+'>'+ autotext +'</div>';
+
+        }
+    }
+
+  </script>
+</body>
