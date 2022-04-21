@@ -1,27 +1,3 @@
-# DataChange.py で加工したファイルを元にCNNでモデルを作る
-
-# 【お勉強に使った記事とか】
-# コピペ元：https://qiita.com/cvusk/items/61cdbce80785eaf28349
-# GTZANの音声をニューラルネットワークで分類する -- https://qiita.com/ahpjop/items/af36c983ef10873b8b9e
-# 深層学習による音声処理：音声から声優さんが誰かを判別させよう -- https://qiita.com/atily17/items/ca9c594ec678f241e8bf
-# 深層学習を使って楽曲のアーティスト分類をやってみた --https://blog.brainpad.co.jp/entry/2018/04/17/143000
-
-# kerasuの基本的な使い方 -- https://note.nkmk.me/python-tensorflow-keras-basics/
-# keras公式 -- https://keras.io/ja/
-
-# Keras入門 ニューラルネットワークによる正弦波の回帰 -- https://helve-blog.com/posts/python/keras-introduction/
-# note.nkmk.me / TensorFlow, Kerasの基本的な使い方 -- https://note.nkmk.me/python-tensorflow-keras-basics/
-
-# モデルの保存・リロード -- http://marupeke296.com/IKDADV_DL_No3_SaveAndReload.html
-
-# オプティマイザ（最適化アルゴリズム）の利用方法(公式) -- https://keras.io/ja/optimizers/
-# バッチサイズ、イテレーション数、エポック数の決め方 --https://qiita.com/kenta1984/items/bad75a37d552510e4682
-# 結果の可視化とか評価指標とかチューニングの方法 -- https://www.infiniteloop.co.jp/blog/2018/02/learning-keras-06/
-# ハイパーパラメータの違いによるloss/accuracyの変化まとめ -- https://qiita.com/hiroyuki827/items/213146d551a6e2227810
-# 機械学習で使う指標総まとめ -- https://www.procrasist.com/entry/ml-metrics
-# 俺とプログラミング / CNNの学習に最高の性能を示す最適化手法はどれか -- https://www.iandprogram.net/entry/2016/02/11/181322
-
-
 import os
 import numpy as np
 import keras
@@ -43,13 +19,13 @@ train_files = ["npz/esc_melsp_train_raw.npz",
                "npz/esc_melsp_train_st.npz",
                "npz/esc_melsp_train_wn.npz",
                "npz/esc_melsp_train_com.npz"]
+
 test_file = "npz/esc_melsp_test.npz"
 
 train_num = 120     # 訓練データ数
 test_num = 41       # テストデータ数(DataChage.pyあたりで確認できる)
 freq = 128          # 周波数
 time = 1034         # ファイルの長さ(time)指定
-
 
 
 # 各データセット用placeholderの定義
@@ -66,7 +42,7 @@ test_data = np.load(test_file)
 x_test = test_data["x"]
 y_test = test_data["y"]
 
-# ラベルをバイナリクラス行列に変換(one-hot表現)
+# one-hot
 classes = 6       # クラス数
 y_train = keras.utils.to_categorical(y_train, classes)
 y_test = keras.utils.to_categorical(y_test, classes)
@@ -77,7 +53,6 @@ x_test = x_test.reshape(test_num, freq, time, 1)
 
 print("x train:{0}\ny train:{1}\nx test:{2}\ny test:{3}".format(x_train.shape, y_train.shape, x_test.shape, y_test.shape))
 
-# 【長さの違う複数のフィルタで畳込する関数】
 def cba(inputs, filters, kernel_size, strides):
     x = Conv2D(filters, kernel_size=kernel_size, strides=strides, padding='same')(inputs)
         # Conv2D：2次元の畳み込みレイヤー
@@ -88,60 +63,6 @@ def cba(inputs, filters, kernel_size, strides):
         # Activation：出力に活性化関数を適用
     return x
 
-
-
-# define CNN
-#inputs = Input(shape=(x_train.shape[1:]))
-
-#x_1 = cba(inputs, filters=32, kernel_size=(1,8), strides=(1,2))
-#x_1 = cba(x_1, filters=32, kernel_size=(8,1), strides=(2,1))
-#x_1 = cba(x_1, filters=64, kernel_size=(1,8), strides=(1,2))
-#x_1 = cba(x_1, filters=64, kernel_size=(8,1), strides=(2,1))
-
-#x_2 = cba(inputs, filters=32, kernel_size=(1,16), strides=(1,2))
-#x_2 = cba(x_2, filters=32, kernel_size=(16,1), strides=(2,1))
-#x_2 = cba(x_2, filters=64, kernel_size=(1,16), strides=(1,2))
-#x_2 = cba(x_2, filters=64, kernel_size=(16,1), strides=(2,1))
-
-#x_3 = cba(inputs, filters=32, kernel_size=(1,32), strides=(1,2))
-#x_3 = cba(x_3, filters=32, kernel_size=(32,1), strides=(2,1))
-#x_3 = cba(x_3, filters=64, kernel_size=(1,32), strides=(1,2))
-#x_3 = cba(x_3, filters=64, kernel_size=(32,1), strides=(2,1))
-
-#x_4 = cba(inputs, filters=32, kernel_size=(1,64), strides=(1,2))
-#x_4 = cba(x_4, filters=32, kernel_size=(64,1), strides=(2,1))
-#x_4 = cba(x_4, filters=64, kernel_size=(1,64), strides=(1,2))
-#x_4 = cba(x_4, filters=64, kernel_size=(64,1), strides=(2,1))
-
-#x = Add()([x_1, x_2, x_3, x_4])     # 結合
-
-#x = cba(x, filters=128, kernel_size=(1,16), strides=(1,2))
-#x = cba(x, filters=128, kernel_size=(16,1), strides=(2,1))
-
-#x = GlobalAveragePooling2D()(x)     # GlobalAveragePoolingして分類
-#x = Dense(classes)(x)
-#x = Activation("softmax")(x)        # 出力層の活性化関数：softmaxm関数
-
-#model = Model(inputs, x)
-
-#-------------------------------------------------------------------
-# 1CNN
-
-#inputs = Input(shape=(x_train.shape[1:]))
-#x_1 = cba(inputs, filters=32, kernel_size=(1,8), strides=(1,2))
-#x_1 = cba(x_1, filters=32, kernel_size=(8,1), strides=(2,1))
-#x_1 = cba(x_1, filters=64, kernel_size=(1,8), strides=(1,2))
-#x_1 = cba(x_1, filters=64, kernel_size=(8,1), strides=(2,1))
-#x = cba(x_1, filters=128, kernel_size=(1,16), strides=(1,2))
-#x = cba(x, filters=128, kernel_size=(16,1), strides=(2,1))
-#x = GlobalAveragePooling2D()(x)     # GlobalAveragePoolingして分類
-#x = Dense(classes)(x)
-#x = Activation("softmax")(x)        # 出力層の活性化関数：softmaxm関数
-#model = Model(inputs, x)
-
-#-------------------------------------------------------------------
-#mini
-
 inputs = Input(shape=(x_train.shape[1:]))
 x_1 = cba(inputs, filters=32, kernel_size=(1,8), strides=(1,2))
 x = cba(x_1, filters=128, kernel_size=(1,16), strides=(1,2))
@@ -151,23 +72,6 @@ x = GlobalAveragePooling2D()(x)     # GlobalAveragePoolingして分類
 x = Dense(classes)(x)
 x = Activation("softmax")(x)        # 出力層の活性化関数：softmaxm関数
 model = Model(inputs, x)
-
-#-------------------------------------------------------------------
-#mini2
-
-#inputs = Input(shape=(x_train.shape[1:]))
-#x_1 = cba(inputs, filters=32, kernel_size=(1,8), strides=(1,2))
-#x = cba(x_1, filters=64, kernel_size=(1,16), strides=(1,2))
-#x = cba(x, filters=64, kernel_size=(16,1), strides=(2,1))
-
-#x = GlobalAveragePooling2D()(x)     # GlobalAveragePoolingして分類
-#x = Dense(classes)(x)
-#x = Activation("softmax")(x)        # 出力層の活性化関数：softmaxm関数
-#model = Model(inputs, x)
-
-
-
-#  optimizer（最適化アルゴリズム）
 
 # 【Adam】
 #opt = keras.optimizers.Adam(lr=0.1, decay=1e-6, amsgrad=True)
@@ -203,7 +107,6 @@ opt = keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=None, 
 
 # 【Nadam：Nesterov Adamオプティマイザ】デフォルトパラメータのまま利用することを推奨
 #opt = keras.optimizers.Nadam(lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, schedule_decay=0.004)
-
 
 
 # 学習処理の設定
@@ -242,11 +145,7 @@ fit = model.fit(x_train,                      # 訓練データのNumpy配列
                 epochs = epochs,
                 validation_data=(x_test, y_test), # 評価用データ指定
                 callbacks = [es_cb, cp_cb])   # コールバック
-    # fit の戻り値
-        # loss → 学習データでの損失値
-        # acc → 学習データでの正解率
-        # va_loss → 検証データでの損失値
-        # val_acc → 検証データでの正解率
+
 
 # モデル保存
 model.save( "model.hdf5" )
