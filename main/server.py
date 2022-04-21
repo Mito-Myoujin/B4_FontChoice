@@ -13,7 +13,7 @@ app = Flask(__name__)
 global model, autotext
 
 # 使うモデルを指定
-model = load_model("../mini7.hdf5")
+model = load_model("../../mini7.hdf5")
 
 # 学習モデルを読み込む関数
 def load_model(x):
