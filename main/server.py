@@ -13,9 +13,7 @@ app = Flask(__name__)
 global model, autotext
 
 # 使うモデルを指定
-model = load_model("/Users/chikuwa/Desktop/code/B4研究用/MakeModel/models/mini7.hdf5")
-#model = load_model("/Users/chikuwa/Desktop/code/B4研究用/main/model-mini7.hdf5")
-#model = load_model("/Users/chikuwa/Desktop/code/B4研究用/main/035model.hdf5")
+model = load_model("../mini7.hdf5")
 
 # 学習モデルを読み込む関数
 def load_model(x):
@@ -37,8 +35,7 @@ def index():                                # http://localhost:5000 にアクセ
 @app.route('/result', methods=['POST'])
 def result():                               # # /result にアクセスしたら以下を実行
     # 解析するファイル指定
-    recieive2html = "/Users/chikuwa/Downloads/test.wav"
-    #recieive2html = "/Users/chikuwa/Desktop/test2/3.wav"
+    recieive2html = "/Users/xxx/Downloads/test.wav"
     # データロード
     sound = AudioSegment.from_wav(recieive2html)
     sound1 = sound[:3000]
